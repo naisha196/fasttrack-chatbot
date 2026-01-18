@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastTrack Punjab - AI Assistant Demo</title>
+    <style>
+        /* 1. Full Screen Layout for the Live Site */
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
+
+        .website-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* 2. Chatbot Widget Styling */
+        .chat-launcher {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            z-index: 9999;
+            transition: transform 0.3s;
+        }
+        .chat-launcher:hover { transform: scale(1.1); }
+
+        .chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 550px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 9999;
+            border: 1px solid #ddd;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 15px 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .close-btn { cursor: pointer; font-size: 24px; }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f4f6f9;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .msg {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .bot-msg { background: white; color: #333; align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .user-msg { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+
+        /* Formatting for HTML inside messages */
+        .msg b { font-weight: 700; color: #000; }
+        .msg ul { margin: 5px 0 5px 20px; padding: 0; }
+        .msg li { margin-bottom: 5px; }
+
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            background: white;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+        }
+        .chat-input-area button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .status-text {
+            font-size: 11px;
+            color: #888;
+            margin-left: 20px;
+            margin-bottom: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <iframe src="https://fasttrack.punjab.gov.in/" class="website-frame"></iframe>
+
+    <div class="chat-launcher" onclick="toggleChat()">💬</div>
+
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <span>🤖 FastTrack Assistant</span>
+            <span class="close-btn" onclick="toggleChat()">×</span>
+        </div>
+
+        <div class="chat-messages" id="messagesBox">
+            <div class="msg bot-msg">
+                Hello! I am the AI Assistant for the FastTrack Punjab Portal. I can guide you through application processes, required documents, and policy details. How can I help you today?
+            </div>
+        </div>
+
+        <div class="status-text" id="statusText">Thinking...</div>
+
+        <div class="chat-input-area">
+            <input type="text" id="msgInput" placeholder="Type query..." onkeypress="handleEnter(event)">
+            <button onclick="sendMsg()" id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let threadId = null;
+
+        function toggleChat() {
+            const win = document.getElementById("chatWindow");
+            win.style.display = (win.style.display === "none" || win.style.display === "") ? "flex" : "none";
+            if (win.style.display === "flex") document.getElementById("msgInput").focus();
+        }
+
+        async function sendMsg() {
+            const input = document.getElementById("msgInput");
+            const btn = document.getElementById("sendBtn");
+            const status = document.getElementById("statusText");
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            addMessage(text, "user-msg");
+            input.value = "";
+            input.disabled = true; btn.disabled = true;
+            status.style.display = "block";
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: text, thread_id: threadId })
+                });
+
+                const data = await response.json();
+                if (data.thread_id) threadId = data.thread_id;
+
+                addMessage(data.response, "bot-msg");
+
+            } catch (error) {
+                addMessage("⚠️ Error: Is main.py running?", "bot-msg");
+            } finally {
+                input.disabled = false; btn.disabled = false;
+                status.style.display = "none";
+                input.focus();
+            }
+        }
+
+        function addMessage(text, className) {
+            const box = document.getElementById("messagesBox");
+            const div = document.createElement("div");
+            div.className = `msg ${className}`;
+            div.innerHTML = text;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function handleEnter(e) { if (e.key === "Enter") sendMsg(); }
+    </script>
+
+</body>
+</html>
