@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
 from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 
 # 1. Load environment variables
 load_dotenv()
@@ -13,6 +15,12 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # 2. Initialize FastAPI
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    return open("static/index.html").read()
+
 
 # 3. Add CORS (Allows the HTML file to talk to this server)
 app.add_middleware(
