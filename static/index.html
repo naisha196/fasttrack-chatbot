@@ -1,203 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FastTrack AI Chatbot</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FastTrack AI Chatbot</title>
 
-        .chat-container {
-            width: 100%;
-            max-width: 600px;
-            background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            height: 90vh;
-            margin-top: 5vh;
-            border-radius: 12px;
-            overflow: hidden;
-        }
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
 
-        .header {
-            background: #007bff;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
+    .chat-container {
+      width: 100%;
+      max-width: 600px;
+      background: white;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+      margin-top: 5vh;
+      border-radius: 12px;
+      overflow: hidden;
+    }
 
-        .messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+    .header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
 
-        .message {
-            padding: 10px 15px;
-            border-radius: 20px;
-            max-width: 80%;
-            line-height: 1.6;
-            font-size: 0.95rem;
-            word-wrap: break-word;
-        }
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
 
-        .bot {
-            background: #e9ecef;
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
+    .message {
+      padding: 10px 15px;
+      border-radius: 20px;
+      max-width: 80%;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      word-wrap: break-word;
+    }
 
-        .user {
-            background: #007bff;
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
+    .bot {
+      background: #e9ecef;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
 
-        .loading {
-            font-size: 0.85rem;
-            color: #666;
-            padding: 8px 20px;
-            display: none;
-        }
+    .user {
+      background: #007bff;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
 
-        .input-area {
-            padding: 15px;
-            border-top: 1px solid #ddd;
-            display: flex;
-            gap: 10px;
-            background: white;
-        }
+    .loading {
+      font-size: 0.85rem;
+      color: #666;
+      padding: 8px 20px;
+      display: none;
+    }
 
-        input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            outline: none;
-        }
+    .input-area {
+      padding: 15px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      gap: 10px;
+      background: white;
+    }
 
-        button {
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+    input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 25px;
+      outline: none;
+    }
 
-        button:disabled {
-            background: #ccc;
-        }
-    </style>
+    button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:disabled {
+      background: #ccc;
+    }
+  </style>
 </head>
 
 <body>
-<div class="chat-container">
+  <div class="chat-container">
     <div class="header">FastTrack Punjab Assistant</div>
 
     <div class="messages" id="chatBox">
-        <div class="message bot">
-            Hello! I have read your files.<br>
-            Ask me anything about them.
-        </div>
-    </div>
+      <div class="message bot">
+        Hello! I am your FastTrack Portal Assistant.<br>
+        I am here to help you with:
+        <ul>
+          <li>Login, registration & account management</li>
+          <li>Applications (CAF/SCAF, approvals & licenses)</li>
+          <li>Payments & application status</li>
+          <li>Service rules (Power, Pollution, Labor, and more)</li>
+          <li>Technical issues & error support</li>
+        </ul>
+      </div>
 
-    <div class="loading" id="loader">Thinking…</div>
+      <div class="loading" id="loader">Thinking…</div>
+    </div>
 
     <div class="input-area">
-        <input
-            type="text"
-            id="userInput"
-            placeholder="Type a message..."
-            onkeypress="handleEnter(event)"
-        >
-        <button onclick="sendMessage()" id="sendBtn">Send</button>
+      <input
+        type="text"
+        id="userInput"
+        placeholder="Type a message..."
+        onkeypress="handleEnter(event)"
+      >
+      <button onclick="sendMessage()" id="sendBtn">Send</button>
     </div>
-</div>
+  </div>
 
-<script>
+  <script>
     let threadId = null;
 
     async function sendMessage() {
-        const input = document.getElementById("userInput");
-        const btn = document.getElementById("sendBtn");
-        const loader = document.getElementById("loader");
+      const input = document.getElementById("userInput");
+      const btn = document.getElementById("sendBtn");
+      const loader = document.getElementById("loader");
 
-        const text = input.value.trim();
-        if (!text) return;
+      const text = input.value.trim();
+      if (!text) return;
 
-        addUserMessage(text);
-        input.value = "";
+      addUserMessage(text);
+      input.value = "";
 
-        input.disabled = true;
-        btn.disabled = true;
-        loader.style.display = "block";
+      input.disabled = true;
+      btn.disabled = true;
+      loader.style.display = "block";
 
-        try {
-            const response = await fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    message: text,
-                    thread_id: threadId
-                })
-            });
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: text,
+            thread_id: threadId
+          })
+        });
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (data.thread_id) {
-                threadId = data.thread_id;
-            }
-
-            addBotMessage(data.response);
-
-        } catch (error) {
-            addBotMessage("Error: Could not connect to backend.");
-            console.error(error);
-        } finally {
-            input.disabled = false;
-            btn.disabled = false;
-            loader.style.display = "none";
-            input.focus();
+        if (data.thread_id) {
+          threadId = data.thread_id;
         }
+
+        addBotMessage(data.response);
+
+      } catch (error) {
+        addBotMessage("Error: Could not connect to backend.");
+        console.error(error);
+      } finally {
+        input.disabled = false;
+        btn.disabled = false;
+        loader.style.display = "none";
+        input.focus();
+      }
     }
 
     function addUserMessage(text) {
-        const chatBox = document.getElementById("chatBox");
-        const div = document.createElement("div");
-        div.className = "message user";
-        div.innerText = text;   // SAFE for user input
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
+      const chatBox = document.getElementById("chatBox");
+      const div = document.createElement("div");
+      div.className = "message user";
+      div.innerText = text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function addBotMessage(html) {
-        const chatBox = document.getElementById("chatBox");
-        const div = document.createElement("div");
-        div.className = "message bot";
-        div.innerHTML = html;   // IMPORTANT: render HTML from assistant
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
+      const chatBox = document.getElementById("chatBox");
+      const div = document.createElement("div");
+      div.className = "message bot";
+      div.innerHTML = html;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function handleEnter(e) {
-        if (e.key === "Enter") sendMessage();
+      if (e.key === "Enter") sendMessage();
     }
-</script>
+  </script>
 </body>
 </html>
