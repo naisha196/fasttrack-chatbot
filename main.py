@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 # --- CONFIGURATION ---
-ASSISTANT_ID = "asst_LWedvpWpKOk6ihm6sObE3vRV"
+ASSISTANT_ID = "asst_d9ffSayiRoHJqCzjrTQnBhw1"
 # ---------------------
 
 class ChatRequest(BaseModel):
