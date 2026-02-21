@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastTrack AI Chatbot</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+/* ── GLOBAL LAYOUT ──────────────────────────────────────────────────────── */
+body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+.main-container { display: flex; width: 100%; height: 100%; }
+
+/* ── CHAT CONTAINER ─────────────────────────────────────────────────────── */
+.chat-container { flex: 1; display: flex; flex-direction: column; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); position: relative; z-index: 2; }
+.header { background: #007bff; color: white; padding: 15px 20px; text-align: center; font-size: 1.2rem; font-weight: bold; }
+.messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+.message { padding: 12px 18px; border-radius: 12px; max-width: 85%; line-height: 1.6; font-size: 0.95rem; word-wrap: break-word; }
+.bot { background: #f1f3f5; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
+.user { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+.message strong, .message b { font-weight: 700; }
+.message ul, .message ol { margin: 5px 0; padding-left: 20px; }
+.message li { margin-bottom: 5px; }
+.message p { margin: 0 0 8px 0; }
+.message p:last-child { margin-bottom: 0; }
+.loading { font-size: 0.85rem; color: #666; padding: 10px 20px; display: none; font-style: italic; }
+
+/* ── INPUT AREA ─────────────────────────────────────────────────────────── */
+.input-area { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; background: white; align-items: center; }
+input { flex: 1; padding: 12px 18px; border: 1px solid #ddd; border-radius: 25px; outline: none; font-size: 15px; }
+input:focus { border-color: #007bff; }
+button.send-btn { padding: 12px 25px; background: #007bff; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; }
+button.send-btn:hover { background: #0056b3; }
+button.send-btn:disabled, input:disabled { background: #e9ecef; color: #999; cursor: not-allowed; }
+button.end-chat-btn { background: #dc3545; color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+button.end-chat-btn:hover { background: #c82333; }
+button.end-chat-btn:disabled { background: #e9ecef; color: #999; cursor: not-allowed; }
+
+/* ── PDF VIEWER ─────────────────────────────────────────────────────────── */
+.doc-viewer { width: 0; background: #2c2c2c; transition: width 0.4s ease-in-out; display: flex; flex-direction: column; border-left: 1px solid #ccc; }
+.doc-header { height: 50px; background: #333; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; font-size: 14px; }
+.close-btn { cursor: pointer; background: #ff4757; color: white; border: none; padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+iframe { flex: 1; border: none; background: #e9e9e9; width: 100%; height: 100%; }
+
+/* ── FEEDBACK MODAL ─────────────────────────────────────────────────────── */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; justify-content: center; align-items: center; }
+.feedback-box { background: white; padding: 30px; border-radius: 12px; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+.feedback-box h3 { margin-top: 0; color: #333; font-size: 1.5rem; margin-bottom: 10px; }
+.feedback-box p { color: #666; margin-bottom: 20px; font-size: 0.95rem; }
+.stars { font-size: 2.5rem; color: #e4e5e9; cursor: pointer; margin-bottom: 20px; user-select: none; }
+.stars span { transition: color 0.2s; }
+.stars span:hover, .stars span.active { color: #ffc107; }
+textarea { width: 100%; height: 100px; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; resize: none; font-family: inherit; font-size: 0.95rem; }
+textarea:focus { outline: none; border-color: #007bff; }
+.submit-feedback-btn { background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; transition: background 0.2s; }
+.submit-feedback-btn:hover { background: #218838; }
+
+</style>
+</head>
+<body>
+<div class="main-container">
+  <div class="chat-container">
+    <div class="header"><span>FastTrack Punjab Assistant</span></div>
+    <div class="messages" id="chatBox">
+      <div class="message bot">
+        Hello! I am your FastTrack Portal Assistant.<br>
+        I am here to help you with:
+        <ul>
+          <li>Login, registration &amp; account management</li>
+          <li>Applications (CAF/SCAF, approvals &amp; licenses)</li>
+          <li>Payments &amp; application status</li>
+          <li>Service rules (Power, Pollution, Labor, and more)</li>
+          <li>Technical issues &amp; error support</li>
+        </ul>
+      </div>
+    </div>
+    <div class="loading" id="loader">Thinking...</div>
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type a message..." onkeypress="handleEnter(event)">
+      <button class="send-btn" onclick="sendMessage()" id="sendBtn">Send</button>
+      <button class="end-chat-btn" onclick="openFeedback()" id="endBtn">End Chat</button>
+    </div>
+  </div>
+
+  <div class="doc-viewer" id="docPanel">
+    <div class="doc-header">
+      <span id="docTitle">Document Viewer</span>
+      <button class="close-btn" onclick="closeDoc()">✖ Close</button>
+    </div>
+    <iframe id="docFrame" src=""></iframe>
+  </div>
+</div>
+
+<div class="modal-overlay" id="feedbackModal">
+  <div class="feedback-box" id="feedbackContent">
+    <h3>Chat Ended</h3>
+    <p>Please rate your experience with the assistant today.</p>
+    <div class="stars" id="starRating">
+      <span onclick="setRating(1)">★</span>
+      <span onclick="setRating(2)">★</span>
+      <span onclick="setRating(3)">★</span>
+      <span onclick="setRating(4)">★</span>
+      <span onclick="setRating(5)">★</span>
+    </div>
+    <textarea id="feedbackText" placeholder="Tell us how we can improve (optional)..."></textarea>
+    <button class="submit-feedback-btn" onclick="submitFeedback()">Submit Feedback</button>
+  </div>
+</div>
+
+<script>
+let threadId = null;
+let selectedRating = 0;
+
+// --- CHAT LOGIC ---
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const endBtn = document.getElementById("endBtn");
+  const loader = document.getElementById("loader");
+  const chatBox = document.getElementById("chatBox");
+  const text = input.value.trim();
+  if (!text) return;
+  addUserMessage(text);
+  input.value = "";
+  input.disabled = true;
+  sendBtn.disabled = true;
+  endBtn.disabled = true;
+  loader.style.display = "block";
+  chatBox.scrollTop = chatBox.scrollHeight;
+  try {
+    const response = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, thread_id: threadId })
+    });
+    const data = await response.json();
+    if (data.thread_id) threadId = data.thread_id;
+    addBotMessage(data.response);
+  } catch (error) {
+    addBotMessage("Error: Could not connect to backend.");
+  } finally {
+    input.disabled = false;
+    sendBtn.disabled = false;
+    endBtn.disabled = false;
+    loader.style.display = "none";
+    input.focus();
+  }
+}
+
+function addUserMessage(text) {
+  const chatBox = document.getElementById("chatBox");
+  chatBox.innerHTML += `<div class="message user">${text}</div>`;
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addBotMessage(htmlContent) {
+  const chatBox = document.getElementById("chatBox");
+  const div = document.createElement("div");
+  div.className = "message bot";
+  div.innerHTML = marked.parse(htmlContent);
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// --- VIEWER LOGIC ---
+function openDocument(url, filename, searchPhrase) {
+  const docFrame = document.getElementById("docFrame");
+  const docPanel = document.getElementById("docPanel");
+
+  document.getElementById("docTitle").innerText = "Viewing: " + filename;
+  docPanel.style.width = "50%";
+  docFrame.src = url;
+
+  if (!searchPhrase || searchPhrase.trim() === "") return;
+
+  docFrame.onload = function () {
+    try {
+      const iframeDoc = docFrame.contentDocument;
+      const escaped = searchPhrase.replace(/\\/g, "\\\\").replace(/`/g, "\\`");
+      const script = iframeDoc.createElement("script");
+      script.textContent = `
+        (function() {
+          var phrase = \`${escaped}\`;
+          function doFind() {
+            try {
+              PDFViewerApplication.eventBus.dispatch("find", {
+                type: "",
+                query: phrase,
+                phraseSearch: true,
+                highlightAll: false,
+                caseSensitive: false,
+                findPrevious: false,
+              });
+              console.log("PDF.js find dispatched for: " + phrase);
+            } catch(e) {
+              console.error("find dispatch failed:", e);
+            }
+          }
+          if (PDFViewerApplication.initializedPromise) {
+            PDFViewerApplication.initializedPromise.then(doFind);
+          } else {
+            setTimeout(doFind, 2000);
+          }
+        })();
+      `;
+      iframeDoc.body.appendChild(script);
+    } catch (e) {
+      console.error("Script injection failed:", e.message);
+    }
+  };
+}
+
+function closeDoc() {
+  document.getElementById("docPanel").style.width = "0";
+  setTimeout(() => { document.getElementById("docFrame").src = ""; }, 400);
+}
+
+function handleEnter(e) { if (e.key === "Enter") sendMessage(); }
+
+// --- FEEDBACK LOGIC ---
+function openFeedback() {
+  document.getElementById("feedbackModal").style.display = "flex";
+  document.getElementById("userInput").disabled = true;
+  document.getElementById("sendBtn").disabled = true;
+  document.getElementById("endBtn").disabled = true;
+}
+
+function setRating(stars) {
+  selectedRating = stars;
+  const starElements = document.getElementById("starRating").children;
+  for (let i = 0; i < starElements.length; i++) {
+    starElements[i].style.color = i < stars ? "#ffc107" : "#e4e5e9";
+  }
+}
+
+async function submitFeedback() {
+  if (selectedRating === 0) {
+    alert("Please select a star rating to submit your feedback.");
+    return;
+  }
+  const submitBtn = document.querySelector(".submit-feedback-btn");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
+
+  const comments = document.getElementById("feedbackText").value;
+  try {
+    await fetch("/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ thread_id: threadId, rating: selectedRating, comments: comments })
+    });
+  } catch(e) {
+    console.error("Feedback failed to send:", e);
+  }
+
+  const box = document.getElementById("feedbackContent");
+  box.innerHTML = `
+    <h3 style="color:#28a745;">Thank You!</h3>
+    <p>Your feedback has been recorded.</p>
+    <button onclick="startNewChat()" style="margin-top:10px; background:#007bff; color:white; border:none; padding:12px 25px; border-radius:25px; cursor:pointer; font-weight:bold; font-size:1rem;">🔄 Start New Chat</button>
+  `;
+}
+
+function startNewChat() {
+  threadId = null;
+  selectedRating = 0;
+
+  document.getElementById("feedbackModal").style.display = "none";
+
+  document.getElementById("feedbackContent").innerHTML = `
+    <h3>Chat Ended</h3>
+    <p>Please rate your experience with the assistant today.</p>
+    <div class="stars" id="starRating">
+      <span onclick="setRating(1)">★</span>
+      <span onclick="setRating(2)">★</span>
+      <span onclick="setRating(3)">★</span>
+      <span onclick="setRating(4)">★</span>
+      <span onclick="setRating(5)">★</span>
+    </div>
+    <textarea id="feedbackText" placeholder="Tell us how we can improve (optional)..."></textarea>
+    <button class="submit-feedback-btn" onclick="submitFeedback()">Submit Feedback</button>
+  `;
+
+  document.getElementById("chatBox").innerHTML = `
+    <div class="message bot">
+      Hello! I am your FastTrack Portal Assistant.<br>
+      I am here to help you with:
+      <ul>
+        <li>Login, registration &amp; account management</li>
+        <li>Applications (CAF/SCAF, approvals &amp; licenses)</li>
+        <li>Payments &amp; application status</li>
+        <li>Service rules (Power, Pollution, Labor, and more)</li>
+        <li>Technical issues &amp; error support</li>
+      </ul>
+    </div>
+  `;
+
+  document.getElementById("userInput").disabled = false;
+  document.getElementById("sendBtn").disabled = false;
+  document.getElementById("endBtn").disabled = false;
+  document.getElementById("userInput").focus();
+  closeDoc();
+}
+</script>
+</body>
+</html>
